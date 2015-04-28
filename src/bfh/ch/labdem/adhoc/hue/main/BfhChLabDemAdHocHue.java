@@ -29,7 +29,8 @@ public class BfhChLabDemAdHocHue {
     private final static String BROKER = "localhost";
     private final static String PORT = "1883";
     private final static String TOPIC_MAIN = "LabDem";
-    private final static String TOPIC_HW = "/HW";
+    private final static String TOPIC_SERVER2HW = "/Server2HW";
+    private final static String TOPIC_HW2SERVER = "/HW2Server";
     private final static String WILL = MQTTMessages.Offline.toString();
 
     //HTTP POST request
@@ -54,7 +55,7 @@ public class BfhChLabDemAdHocHue {
         
         try {
             //subscriber setup
-            s = new Subscriber(PROTOCOL, BROKER, PORT, TOPIC_MAIN + TOPIC_HW, WILL, ClientType.Subscriber);
+            s = new Subscriber(PROTOCOL, BROKER, PORT, TOPIC_MAIN + TOPIC_SERVER2HW, WILL, ClientType.Subscriber);
             s.connectToBroker();
             s.subscribe();
             
