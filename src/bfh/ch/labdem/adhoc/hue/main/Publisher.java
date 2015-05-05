@@ -6,7 +6,6 @@
 package bfh.ch.labdem.adhoc.hue.main;
 
 import bfh.ch.labdem.adhoc.hue.main.BfhChLabDemAdHocHue.ClientType;
-import bfh.ch.labdem.adhoc.hue.main.BfhChLabDemAdHocHue.MQTTMessages;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -23,13 +22,7 @@ public class Publisher extends Client {
     public Publisher(String protocol, String broker, String port, String topic, String will, ClientType type) throws MqttException {
         super(protocol, broker, port, topic, will, type);
     }
-    
-    @Override
-    public void connectToBroker() throws MqttException {
-        super.connectToBroker();
-        mqttClient.publish(TOPIC, MQTTMessages.Online.toString().getBytes(), 1, true);
-    }
-    
+
     /**
      * sends a message to the broker for the publishers topic
      * @param m message to send

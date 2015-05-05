@@ -67,7 +67,7 @@ public class Subscriber extends Client {
         public void messageArrived(String string, MqttMessage mm) throws MqttException {
             //TODO implement
             
-            System.out.printf("Topic: (%s) Payload: (%s) Retained: (%b) \n", string, new String(mm.getPayload()), mm.isRetained());
+            //System.out.printf("Topic: (%s) Payload: (%s) Retained: (%b) \n", string, new String(mm.getPayload()), mm.isRetained());
             
                                                 //typeId, HW name, command, value
             //messages need to be in the format: "[int], [String], [String], [String]"

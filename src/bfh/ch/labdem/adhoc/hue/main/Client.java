@@ -5,7 +5,6 @@
  */
 package bfh.ch.labdem.adhoc.hue.main;
 
-
 import bfh.ch.labdem.adhoc.hue.main.BfhChLabDemAdHocHue.ClientType;
 import java.net.URI;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -62,6 +61,7 @@ public abstract class Client {
     public void connectToBroker() throws MqttException {
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setWill(TOPIC, WILL.getBytes(), 1, true);
+        connectOptions.setCleanSession(true);
 	mqttClient.connect(connectOptions);
     }
 

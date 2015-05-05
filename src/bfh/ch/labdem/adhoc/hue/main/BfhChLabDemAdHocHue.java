@@ -31,7 +31,7 @@ public class BfhChLabDemAdHocHue {
     private final static String TOPIC_MAIN = "LabDem";
     private final static String TOPIC_SERVER2HW = "/Server2HW";
     private final static String TOPIC_HW2SERVER = "/HW2Server";
-    private final static String WILL = MQTTMessages.Offline.toString();
+    private final static String WILL = MQTTMessages.OfflineAdHocHue.toString();
 
     //HTTP POST request
     private static URL url;
@@ -42,10 +42,13 @@ public class BfhChLabDemAdHocHue {
     private final static String SERVER_URL = "http://vmnashira.bfh.ch:8080/HueLampApi/HueLampsApi";
         
     private static Subscriber s;
-    //private static Publisher p;
+    private static Publisher p;
     
     //HUE lamps have type 1
     public final static int HARDWARE_TYPE_ID = 1;
+    
+    //indicates if the message that the lamp servlet is offline has been sent or not
+    private static boolean sentLampServletOffline;
     
     /**
      * @param args the command line arguments
@@ -58,6 +61,12 @@ public class BfhChLabDemAdHocHue {
             s = new Subscriber(PROTOCOL, BROKER, PORT, TOPIC_MAIN + TOPIC_SERVER2HW, WILL, ClientType.Subscriber);
             s.connectToBroker();
             s.subscribe();
+            
+            //oublisher setup
+            p = new Publisher(PROTOCOL, BROKER, PORT, TOPIC_MAIN + TOPIC_HW2SERVER, WILL, ClientType.Publisher);
+            p.connectToBroker();
+            p.Publish(MQTTMessages.Online.toString(), 2, true);
+            
             
             
             //http post request setup
@@ -86,20 +95,36 @@ public class BfhChLabDemAdHocHue {
             // Writing the post data to the HTTP request body
             try (BufferedWriter httpRequestBodyWriter = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream()))) {
                 httpRequestBodyWriter.write(TARGET_NAME + "=" + name + "&" + COMMAND + "=" + command + "&" + VALUE + "=" + value);
-            }
+            } 
             // Reading from the HTTP response body
             try (Scanner httpResponseScanner = new Scanner(urlConnection.getInputStream())) {
                 while(httpResponseScanner.hasNextLine()) {
                     System.out.println(httpResponseScanner.nextLine());
                 }
             }
- 
-        } catch (IOException ex) {
-            Logger.getLogger(BfhChLabDemAdHocHue.class.getName()).log(Level.SEVERE, null, ex);
-        }
+            
+            //message could be sent, -> no error, error message needs to be sent if a new error occurs
+            sentLampServletOffline = false;
 
+        } catch (IOException ex) {
+            //send error message to server
+            sendToServer(MQTTMessages.LampServletOffline.toString());
+        }
     }
     
+    public static void sendToServer(String m) {
+        try {
+            if(!sentLampServletOffline){
+                p.Publish(m, 2, true);
+                sentLampServletOffline = true;
+            }
+            
+        } catch (MqttException ex) {
+            //no possibility to contact daemon, need to shut down this programme -> causes message "offline" on topic
+            System.exit(1);
+            Logger.getLogger(BfhChLabDemAdHocHue.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     
     /**
      * enum containing the different client types
@@ -112,7 +137,8 @@ public class BfhChLabDemAdHocHue {
     public enum MQTTMessages{
         Online,
         Offline,
-        Started
+        OfflineAdHocHue,
+        LampServletOffline
     }
     
     
