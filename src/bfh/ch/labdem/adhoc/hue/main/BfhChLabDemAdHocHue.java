@@ -24,8 +24,6 @@ public class BfhChLabDemAdHocHue {
 
     //MQTT broker information
     private final static String PROTOCOL = "tcp";
-    //private final static String BROKER = "broker.mqttdashboard.com"; //public broker, for test purposes
-    //private final static String BROKER = "147.87.117.73"; //LabDem broker
     private final static String BROKER = "localhost";
     private final static String PORT = "1883";
     private final static String TOPIC_MAIN = "LabDem";
@@ -38,7 +36,6 @@ public class BfhChLabDemAdHocHue {
     private final static String TARGET_NAME = "targetName";
     private final static String COMMAND = "command";
     private final static String VALUE= "value";
-    //private final static String SERVER_URL = "http://" + BROKER + "/test2/index.php";
     private final static String SERVER_URL = "http://vmnashira.bfh.ch:8080/HueLampApi/HueLampsApi";
         
     private static Subscriber s;
@@ -65,10 +62,8 @@ public class BfhChLabDemAdHocHue {
             //oublisher setup
             p = new Publisher(PROTOCOL, BROKER, PORT, TOPIC_MAIN + TOPIC_HW2SERVER, WILL, ClientType.Publisher);
             p.connectToBroker();
-            p.Publish(MQTTMessages.Online.toString(), 2, true);
-            
-            
-            
+            p.Publish(MQTTMessages.Online.toString(), 1, true);
+
             //http post request setup
             url = new URL(SERVER_URL);
             
@@ -81,7 +76,12 @@ public class BfhChLabDemAdHocHue {
         
     }
  
-    
+    /**
+     * Sends a message to the Hue Lamp Service using a HTTP GET request
+     * @param name Target name
+     * @param command command
+     * @param value value (of the command)
+     */
     public static void sendToHardware(String name, String command, String value){
         
         try {
@@ -112,13 +112,19 @@ public class BfhChLabDemAdHocHue {
         }
     }
     
+    /**
+     * sends a message to the Daemon Server
+     * used to send error messages only, therefore this message will be sent
+     * once only until a message could be send successful
+     * will terminate if the message could not be sent
+     * @param m message to send
+     */
     public static void sendToServer(String m) {
         try {
             if(!sentLampServletOffline){
                 p.Publish(m, 2, true);
                 sentLampServletOffline = true;
             }
-            
         } catch (MqttException ex) {
             //no possibility to contact daemon, need to shut down this programme -> causes message "offline" on topic
             System.exit(1);
@@ -134,6 +140,9 @@ public class BfhChLabDemAdHocHue {
         Publisher
     }
     
+    /**
+     * enum containing different messages that will be sent using MQTT
+     */
     public enum MQTTMessages{
         Online,
         Offline,
