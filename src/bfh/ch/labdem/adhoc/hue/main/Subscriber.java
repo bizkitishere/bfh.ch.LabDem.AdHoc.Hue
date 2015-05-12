@@ -72,13 +72,13 @@ public class Subscriber extends Client {
                                                 //typeId, HW name, command, value
             //messages need to be in the format: "[int], [String], [String], [String]"
             
-            int typeId;
+            int typeId, messageId;
             String hwName, command, value;
 
             String message = new String(mm.getPayload());
             
-            if(message.equals(MQTTMessages.Online.toString()) 
-            || message.equals(MQTTMessages.Offline.toString())) return;
+            //nothing to do if the "Online" message is received
+            if(message.equals(MQTTMessages.Online.toString())) return;
             
             String[] tokens = message.split(";", -1);
             
@@ -92,7 +92,9 @@ public class Subscriber extends Client {
                 command = tokens[2];
                 value = tokens[3];
                 
-                BfhChLabDemAdHocHue.sendToHardware(hwName, command, value);
+                messageId = Integer.parseInt(tokens[4]);
+                
+                BfhChLabDemAdHocHue.sendToHardware(hwName, command, value, messageId);
                 
             }catch (NumberFormatException ex){
                 String m = Subscriber.class.getName() + " - " + ex.getMessage();

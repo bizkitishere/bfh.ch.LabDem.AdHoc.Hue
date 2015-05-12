@@ -11,9 +11,10 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Timer;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 /**
@@ -41,6 +42,12 @@ public class BfhChLabDemAdHocHue {
     private static Subscriber s;
     private static Publisher p;
     
+    //contains ids to "group" actions that belong together,
+    //thus the error message will be sent only once
+    private static final ArrayList<Integer> MESSAGEIDS = new ArrayList<>();
+    
+    private static final Timer TIMER = new Timer();
+    
     //HUE lamps have type 1
     public final static int HARDWARE_TYPE_ID = 1;
     
@@ -49,14 +56,13 @@ public class BfhChLabDemAdHocHue {
      */
     public static void main(String[] args) {
         
-        
         try {
             //subscriber setup
             s = new Subscriber(PROTOCOL, BROKER, PORT, TOPIC_MAIN + TOPIC_SERVER2HW, WILL, ClientType.Subscriber);
             s.connectToBroker();
             s.subscribe();
             
-            //oublisher setup
+            //publisher setup
             p = new Publisher(PROTOCOL, BROKER, PORT, TOPIC_MAIN + TOPIC_HW2SERVER, WILL, ClientType.Publisher);
             p.connectToBroker();
             p.Publish(MQTTMessages.Online.toString(), 1, true);
@@ -64,8 +70,19 @@ public class BfhChLabDemAdHocHue {
             //http post request setup
             url = new URL(SERVER_URL);
             
+            //prepare the cleaner to empty the list of ids once every day
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.HOUR_OF_DAY, 03);
+            cal.set(Calendar.MINUTE, 0);
+            Cleaner c = new Cleaner(MESSAGEIDS);
+            //executed the run of Cleaner once every 24 hours, starting at 3 in the morning
+            TIMER.schedule(c, cal.getTime(), 86400000);
+            
+            System.out.println(cal.getTime());
+            
         } catch (MqttException | MalformedURLException ex) {
-            Logger.getLogger(BfhChLabDemAdHocHue.class.getName()).log(Level.SEVERE, null, ex);
+            //if mqtt does not work, shut down, the "will" will notify the daemon
+            System.exit(1);
         } 
         
     }
@@ -75,8 +92,9 @@ public class BfhChLabDemAdHocHue {
      * @param name Target name
      * @param command command
      * @param value value (of the command)
+     * @param messageId used to group actions that belong together
      */
-    public static void sendToHardware(String name, String command, String value){
+    public static void sendToHardware(String name, String command, String value, int messageId){
         
         try {
             // opens the connection to the server
@@ -98,8 +116,12 @@ public class BfhChLabDemAdHocHue {
             }
 
         } catch (IOException ex) {
-            //send error message to server
-            sendToServer(MQTTMessages.LampServletOffline.toString());
+            //send error message to server, only if a message of the same "group" has not yet been sent
+            if(!MESSAGEIDS.contains(messageId)){
+                sendToServer(MQTTMessages.LampServletOffline.toString());
+                MESSAGEIDS.add(messageId);
+            }
+            
         }
     }
     
@@ -116,7 +138,6 @@ public class BfhChLabDemAdHocHue {
         } catch (MqttException ex) {
             //no possibility to contact daemon, need to shut down this programme -> causes message "offline" on topic
             System.exit(1);
-            Logger.getLogger(BfhChLabDemAdHocHue.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
