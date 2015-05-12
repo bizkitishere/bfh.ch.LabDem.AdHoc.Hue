@@ -44,9 +44,6 @@ public class BfhChLabDemAdHocHue {
     //HUE lamps have type 1
     public final static int HARDWARE_TYPE_ID = 1;
     
-    //indicates if the message that the lamp servlet is offline has been sent or not
-    private static boolean sentLampServletOffline;
-    
     /**
      * @param args the command line arguments
      */
@@ -67,10 +64,7 @@ public class BfhChLabDemAdHocHue {
             //http post request setup
             url = new URL(SERVER_URL);
             
-            
-        } catch (MqttException ex) {
-            Logger.getLogger(BfhChLabDemAdHocHue.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (MalformedURLException ex) {
+        } catch (MqttException | MalformedURLException ex) {
             Logger.getLogger(BfhChLabDemAdHocHue.class.getName()).log(Level.SEVERE, null, ex);
         } 
         
@@ -102,9 +96,6 @@ public class BfhChLabDemAdHocHue {
                     System.out.println(httpResponseScanner.nextLine());
                 }
             }
-            
-            //message could be sent, -> no error, error message needs to be sent if a new error occurs
-            sentLampServletOffline = false;
 
         } catch (IOException ex) {
             //send error message to server
@@ -121,10 +112,7 @@ public class BfhChLabDemAdHocHue {
      */
     public static void sendToServer(String m) {
         try {
-            if(!sentLampServletOffline){
-                p.Publish(m, 2, true);
-                sentLampServletOffline = true;
-            }
+            p.Publish(m, 1, true);
         } catch (MqttException ex) {
             //no possibility to contact daemon, need to shut down this programme -> causes message "offline" on topic
             System.exit(1);
@@ -149,6 +137,5 @@ public class BfhChLabDemAdHocHue {
         OfflineAdHocHue,
         LampServletOffline
     }
-    
     
 }
