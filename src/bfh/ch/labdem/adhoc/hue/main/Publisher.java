@@ -6,6 +6,9 @@
 package bfh.ch.labdem.adhoc.hue.main;
 
 import bfh.ch.labdem.adhoc.hue.main.BfhChLabDemAdHocHue.ClientType;
+import java.util.logging.Level;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -21,6 +24,7 @@ public class Publisher extends Client {
     
     public Publisher(String protocol, String broker, String port, String topic, String will, ClientType type) throws MqttException {
         super(protocol, broker, port, topic, will, type);
+        msgHandler = new MQTTMessageHandler();
     }
 
     /**
@@ -42,6 +46,31 @@ public class Publisher extends Client {
      */
     public void Publish(String m, int qos, boolean retained) throws MqttException{
         mqttClient.publish(TOPIC, m.getBytes(), qos, retained);
+    }
+    
+    /**
+     * Handles the arriving messages, connection loss and complete delivery
+     */
+    private class MQTTMessageHandler implements MqttCallback{
+
+        @Override
+        public void connectionLost(Throwable thrwbl) {
+            //ad hoc will just shut down when the connection is lost
+            //this will notify daemon and app
+            System.exit(1);
+        }
+
+        @Override
+        //messega that is called when a new mqtt message arrives
+        public void messageArrived(String string, MqttMessage mm) throws MqttException {            
+            //not needed, since this class will not receive messages
+        }
+
+        @Override
+        public void deliveryComplete(IMqttDeliveryToken imdt) {
+            //nothing to do when the message could be delivered
+        }
+        
     }
     
 }

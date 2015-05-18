@@ -5,9 +5,6 @@
  */
 package bfh.ch.labdem.adhoc.hue.main;
 
-//import bfh.ch.labdem.helper.LabDemLogger;
-
-//import java.util.logging.Level;
 import bfh.ch.labdem.adhoc.hue.main.BfhChLabDemAdHocHue.ClientType;
 import bfh.ch.labdem.adhoc.hue.main.BfhChLabDemAdHocHue.MQTTMessages;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -22,11 +19,9 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
  */
 public class Subscriber extends Client {
     
-    //client parameters
-    private final MqttCallback MESSAGE_HANDLER = new MQTTMessageHandler();
-    
     public Subscriber(String protocol, String broker, String port, String topic, String will, ClientType type) throws MqttException{
         super(protocol, broker, port, topic, will, type);
+        msgHandler = new MQTTMessageHandler();
     }
     
     /**
@@ -34,7 +29,7 @@ public class Subscriber extends Client {
      * @throws MqttException 
      */
     public void subscribe() throws MqttException{
-        mqttClient.setCallback(MESSAGE_HANDLER);
+        mqttClient.setCallback(msgHandler);
         mqttClient.subscribe(TOPIC);
     }
     
@@ -50,27 +45,20 @@ public class Subscriber extends Client {
     /**
      * Handles the arriving messages, connection loss and complete delivery
      */
-    class MQTTMessageHandler implements MqttCallback{
+    private class MQTTMessageHandler implements MqttCallback{
 
         @Override
         public void connectionLost(Throwable thrwbl) {
-            //TODO implement
-            System.out.println("Connection Lost...");
-            System.out.println(thrwbl.getCause());
-            System.out.println(thrwbl.getMessage());
-            String m = Subscriber.class.getName() + "\n" + thrwbl.getMessage();
-            //LabDemLogger.LOGGER.log(Level.SEVERE, m);
+            //ad hoc will just shut down when the connection is lost
+            //this will notify daemon and app
+            System.exit(1);
         }
 
         @Override
         //messega that is called when a new mqtt message arrives
-        public void messageArrived(String string, MqttMessage mm) throws MqttException {
-            //TODO implement
-            
-            //System.out.printf("Topic: (%s) Payload: (%s) Retained: (%b) \n", string, new String(mm.getPayload()), mm.isRetained());
-            
-                                                //typeId, HW name, command, value
-            //messages need to be in the format: "[int], [String], [String], [String]"
+        public void messageArrived(String string, MqttMessage mm) throws MqttException {            
+                                                //typeId, HW name, command, value,   messageId
+            //messages need to be in the format: "[int], [String], [String], [String], [int]"
             
             int typeId, messageId;
             String hwName, command, value;
@@ -92,21 +80,19 @@ public class Subscriber extends Client {
                 command = tokens[2];
                 value = tokens[3];
                 
+                //used to "group" messages that belong to the same action
                 messageId = Integer.parseInt(tokens[4]);
                 
                 BfhChLabDemAdHocHue.sendToHardware(hwName, command, value, messageId);
                 
             }catch (NumberFormatException ex){
-                String m = Subscriber.class.getName() + " - " + ex.getMessage();
-                //LabDemLogger.LOGGER.log(Level.WARNING, m);
-            }
-                
+                //nothing to do when the format is not correct
+            }       
         }
 
         @Override
         public void deliveryComplete(IMqttDeliveryToken imdt) {
-            //TODO implement
-            System.out.println("Delivery Complete...");
+            //not needed, since this class will only receive messages
         }
         
     }

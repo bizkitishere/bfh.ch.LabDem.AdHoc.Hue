@@ -7,6 +7,7 @@ package bfh.ch.labdem.adhoc.hue.main;
 
 import bfh.ch.labdem.adhoc.hue.main.BfhChLabDemAdHocHue.ClientType;
 import java.net.URI;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -29,6 +30,7 @@ public abstract class Client {
     
     //client parameters
     final MqttClient mqttClient;
+    MqttCallback msgHandler;
     
     
     /**
