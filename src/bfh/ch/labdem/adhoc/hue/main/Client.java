@@ -28,6 +28,10 @@ public abstract class Client {
     final String TOPIC;
     final String WILL;
     
+    //password for mqtt
+    private final String USER = "apodeixisMQTTUser";
+    private final String PASS = "MQTTPass7";
+
     //client parameters
     final MqttClient mqttClient;
     MqttCallback msgHandler;
@@ -64,6 +68,8 @@ public abstract class Client {
         MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setWill(TOPIC, WILL.getBytes(), 1, true);
         connectOptions.setCleanSession(true);
+        connectOptions.setUserName(USER);
+        connectOptions.setPassword(PASS.toCharArray());
 	mqttClient.connect(connectOptions);
     }
 
